@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LES FLOTS BLEUS</title>
+  <style>
+    /* CSS保持不变 */
+    :root {
+      --sea: #1e88e5;
+      --sky: #e3f2fd;
+      --sun: #ffdd55;
+      --foam: #ffffff;
+      --sand: #f5efe6;
+      --text: #0f172a;
+      --muted: #64748b;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; background: radial-gradient(1200px 600px at 50% -200px, #ffffff 0%, transparent 60%), linear-gradient(to bottom, #f7fbff, var(--sand)); color: var(--text); }
+    header { position: sticky; top: 0; z-index: 10; padding: 18px; background: linear-gradient(135deg, #6ec6ff, #b3e5fc); color: #ffffff; text-align: center; box-shadow: 0 8px 24px rgba(110,198,255,0.35); }
+    header h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 1px; }
+    header p { margin: 6px 0 0; font-size: 18px; font-weight: 700; opacity: 0.95; }
+    .container { display: grid; grid-template-columns: 96px 1fr; min-height: calc(100vh - 72px); }
+    nav { background: rgba(255,255,255,0.85); backdrop-filter: blur(6px); border-right: 1px solid #e5e7eb; padding: 20px 12px; display: flex; flex-direction: column; justify-content: center; gap: 28px; align-items: stretch; }
+    nav button { padding: 20px 12px; font-size: 14px; border-radius: 26px; border: none; background: linear-gradient(to bottom, #ffffff, #e3f2fd); color: var(--sea); cursor: pointer; box-shadow: 0 12px 24px rgba(0,0,0,0.12); position: relative; }
+    nav button::before { content: '\1F354'; position: absolute; left: 6px; top: 50%; transform: translateY(-50%); opacity: 0.25; font-size: 16px; }
+    nav button.active { background: linear-gradient(to bottom, var(--sea), #4fc3f7); color: white; }
+    main { padding: 14px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+    .card { background: rgba(255,255,255,0.92); border-radius: 22px; padding: 14px; box-shadow: 0 10px 26px rgba(148,187,233,0.35); transition: transform 0.25s ease, box-shadow 0.25s ease; }
+    .card:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(30,136,229,0.25); }
+    .card img { width: 100%; height: 140px; object-fit: cover; border-radius: 16px; }
+    .card h3 { margin: 10px 0 4px; font-size: 15px; }
+    .price { font-weight: 700; color: var(--sea); margin-bottom: 4px; }
+    .desc { font-size: 12px; color: var(--muted); }
+    footer { text-align: center; padding: 14px; font-size: 12px; color: var(--muted); }
+    .admin { max-width: 900px; margin: 0 auto; padding: 20px; }
+    .admin h2 { text-align: center; color: var(--sea); }
+    .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
+    input, textarea, select { padding: 10px; border-radius: 12px; border: 1px solid #cbd5e1; }
+    .btn { padding: 10px 14px; border-radius: 14px; border: none; cursor: pointer; font-weight: 600; }
+    .btn.primary { background: linear-gradient(to right, var(--sea), #4fc3f7); color: white; }
+    .btn.danger { background: #ef4444; color: white; }
+    .btn.ok { background: #22c55e; color: white; }
+    .table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+    .table th, .table td { padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: left; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>LES FLOTS BLEUS</h1>
+  <p>snack de la plage</p>
+</header>
+<div class="container" id="shop">
+  <nav id="cats"></nav>
+  <main>
+    <div class="grid" id="products"></div>
+  </main>
+</div>
+<footer>
+  <a href="#" onclick="openAdmin()">Administration</a>
+</footer>
+<div class="admin hidden" id="admin">
+  <h2>Administration – LES FLOTS BLEUS</h2>
+  <div id="login">
+    <div class="row">
+      <input id="u" placeholder="Utilisateur" />
+      <input id="p" type="password" placeholder="Mot de passe" />
+      <button class="btn primary" onclick="login()">Connexion</button>
+    </div>
+  </div>
+  <div id="panel" class="hidden">
+    <h3>Produit</h3>
+    <div class="row">
+      <input id="name" placeholder="Nom du produit" />
+      <input id="price" placeholder="Prix (€)" />
+      <input id="img" placeholder="URL image" />
+      <select id="cat"></select>
+    </div>
+    <textarea id="desc" rows="3" placeholder="Description"></textarea>
+    <div style="margin-top:10px; display:flex; gap:10px;">
+      <button class="btn ok" onclick="save()">Enregistrer</button>
+      <button class="btn" onclick="resetForm()">Réinitialiser</button>
+    </div>
+    <h3 style="margin-top:30px">Produits existants</h3>
+    <table class="table" id="table"></table>
+  </div>
+</div>
+<script>
+  // JavaScript 保持不变
+  const DEFAULT_CATS = ['sandwich','hambuger','boisson','dessert'];
+  let state = JSON.parse(localStorage.getItem('lfb_fr')) || { cats: DEFAULT_CATS, products: [], nextId: 1 };
+  function persist(){ localStorage.setItem('lfb_fr', JSON.stringify(state)); }
+  function renderCats(){ const nav = document.getElementById('cats'); nav.innerHTML = ''; state.cats.forEach((c,i)=>{ const b = document.createElement('button'); b.textContent = c; if(i===0) b.classList.add('active'); b.onclick = ()=>filter(c,b); nav.appendChild(b); }); if(state.cats[0]) filter(state.cats[0]); }
+  function filter(cat, btn){ document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active')); if(btn) btn.classList.add('active'); const wrap = document.getElementById('products'); wrap.innerHTML = ''; state.products.filter(p=>p.cat===cat && !p.hidden).forEach(p=>{ const d = document.createElement('div'); d.className = 'card'; d.innerHTML = `<img src="${p.img || 'https://via.placeholder.com/300x200'}"><h3>${p.name}</h3><div class="price">${p.price} €</div><div class="desc">${p.desc}</div>`; wrap.appendChild(d); }); }
+  function openAdmin(){ document.getElementById('shop').classList.add('hidden'); document.getElementById('admin').classList.remove('hidden'); fillCats(); drawTable(); }
+  function login(){ if(u.value==='zhang'&&p.value==='fabrice'){ document.getElementById('login').classList.add('hidden'); document.getElementById('panel').classList.remove('hidden'); } else alert('Identifiants incorrects'); }
+  function fillCats(){ const s=document.getElementById('cat'); s.innerHTML=''; state.cats.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; s.appendChild(o); }); }
+  let editing=null; function save(){ const p={id:editing||state.nextId++, name:name.value, price:price.value, img:img.value, desc:desc.value, cat:cat.value, hidden:false}; if(editing){ state.products=state.products.map(x=>x.id===editing?p:x); editing=null; } else state.products.push(p); persist(); resetForm(); drawTable(); renderCats(); }
+  function edit(id){ const p=state.products.find(x=>x.id===id); if(!p) return; editing=id; name.value=p.name; price.value=p.price; img.value=p.img; desc.value=p.desc; cat.value=p.cat; }
+  function del(id){ state.products=state.products.filter(p=>p.id!==id); persist(); drawTable(); renderCats(); }
+  function toggle(id){ const p=state.products.find(p=>p.id===id); p.hidden=!p.hidden; persist(); drawTable(); renderCats(); }
+  function drawTable(){ const t=document.getElementById('table'); t.innerHTML='<tr><th>ID</th><th>Nom</th><th>Cat.</th><th>Visible</th><th>Actions</th></tr>'; state.products.forEach(p=>{ t.innerHTML+=`<tr><td>${p.id}</td><td>${p.name}</td><td>${p.cat}</td><td>${!p.hidden}</td><td><button onclick="edit(${p.id})">Modifier</button><button onclick="toggle(${p.id})">Afficher/Masquer</button><button onclick="del(${p.id})">Supprimer</button></td></tr>`; }); }
+  function resetForm(){ editing=null; name.value=price.value=img.value=desc.value=''; }
+  renderCats();
+</script>
+</body>
+</html>
